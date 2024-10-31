@@ -122,6 +122,7 @@ if __name__ == "__main__":
         le = LabelEncoder()
         data[col] = le.fit_transform(data[col].apply(str).values)
     feat_data = data.drop("is_fraud", axis=1)
+    feat_data = feat_data.apply(pd.to_numeric, errors='coerce').fillna(0)
     labels = data["is_fraud"]
     g.ndata['label'] = torch.from_numpy(labels.to_numpy()).to(torch.long)
     g.ndata['feat'] = torch.from_numpy(
