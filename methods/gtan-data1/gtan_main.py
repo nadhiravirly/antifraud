@@ -151,16 +151,15 @@ def load_gtan_data(dataset: str, test_size: float):
         feat_data = data.drop("is_fraud", axis=1)
         labels = data["is_fraud"]
 
-        feat_data.to_csv(prefix + "DATA1_feat_data.csv", index=None)
-        labels.to_csv(prefix + "DATA1_label_data.csv", index=None)
-
         index = list(range(len(labels)))
         g.ndata['label'] = torch.from_numpy(labels.to_numpy()).to(torch.long)
         g.ndata['feat'] = torch.from_numpy(feat_data.to_numpy()).to(torch.float32)
-        graph_path = prefix + "graph-DATA1.bin"
-        dgl.data.utils.save_graphs(graph_path, [g])
 
+        # Split dataset
         train_idx, test_idx, y_train, y_test = train_test_split(
-            index, labels, stratify=labels, test_size=test_size/2, random_state=2, shuffle=True)
-    
+            index, labels, stratify=labels, test_size=test_size, random_state=2, shuffle=True)
+    else:
+        raise ValueError(f"Dataset {dataset} not supported")
+
     return feat_data, labels, train_idx, test_idx, g, cat_features
+
