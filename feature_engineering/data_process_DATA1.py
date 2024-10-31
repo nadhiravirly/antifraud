@@ -66,6 +66,22 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
 
+def count_risk_neighs(graph: dgl.DGLGraph, risk_label: int = 1) -> torch.Tensor:
+    """
+    Count the number of risk neighbors for each node in the graph.
+    :param graph: dgl.DGLGraph, the graph dataset
+    :param risk_label: int, the label indicating a risky node (default is 1)
+    :return: torch.Tensor with the count of risk neighbors per node
+    """
+    ret = []
+    for center_idx in graph.nodes():
+        neigh_idxs = graph.successors(center_idx)
+        neigh_labels = graph.ndata['label'][neigh_idxs]
+        risk_neigh_num = (neigh_labels == risk_label).sum()
+        ret.append(risk_neigh_num)
+    
+    return torch.Tensor(ret)
+
 def feat_map():
     tensor_list = []
     feat_names = []
