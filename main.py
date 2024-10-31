@@ -13,8 +13,6 @@ from scipy.io import loadmat
 import yaml
 
 logger = logging.getLogger(__name__)
-# sys.path.append("..")
-
 
 def parse_args():
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
@@ -22,8 +20,6 @@ def parse_args():
     parser.add_argument("--method", default=str)  # specify which method to use
     method = vars(parser.parse_args())['method']  # dict
 
-    # if method in ['']:
-    #     yaml_file = "config/base_cfg.yaml"
     if method in ['mcnn']:
         yaml_file = "config/mcnn_cfg.yaml"
     elif method in ['stan']:
@@ -34,28 +30,25 @@ def parse_args():
         yaml_file = "config/stagn_cfg.yaml"
     elif method in ['gtan']:
         yaml_file = "config/gtan_cfg.yaml"
+    elif method in ['gtan-data1']:  # Tambahkan untuk gtan-data1
+        yaml_file = "config/gtan-data1_cfg.yaml"
     elif method in ['rgtan']:
         yaml_file = "config/rgtan_cfg.yaml"
     elif method in ['hogrl']:
         yaml_file = "config/hogrl_cfg.yaml"
-        
     else:
         raise NotImplementedError("Unsupported method.")
 
-    # config = Config().get_config()
     with open(yaml_file) as file:
         args = yaml.safe_load(file)
     args['method'] = method
     return args
 
-
 def base_load_data(args: dict):
-    # load S-FFSD dataset for base models
     data_path = "data/S-FFSD.csv"
     feat_df = pd.read_csv(data_path)
     train_size = 1 - args['test_size']
     method = args['method']
-    # for ICONIP16 & AAAI20
     if args['method'] == 'stan':
         if os.path.exists("data/tel_3d.npy"):
             return
@@ -74,7 +67,6 @@ def base_load_data(args: dict):
     np.save(trl_file, trl)
     np.save(tel_file, tel)
     return
-
 
 def main(args):
     if args['method'] == 'mcnn':
@@ -141,6 +133,12 @@ def main(args):
             args['dataset'], args['test_size'])
         gtan_main(
             feat_data, g, train_idx, test_idx, labels, args, cat_features)
+    elif args['method'] == 'gtan-data1':  # Tambahkan pemanggilan untuk gtan-data1
+        from methods.gtan.gtan_main import gtan_main, load_gtan_data
+        feat_data, labels, train_idx, test_idx, g, cat_features = load_gtan_data(
+            "DATA1", args['test_size'])
+        gtan_main(
+            feat_data, g, train_idx, test_idx, labels, args, cat_features)
     elif args['method'] == 'rgtan':
         from methods.rgtan.rgtan_main import rgtan_main, loda_rgtan_data
         feat_data, labels, train_idx, test_idx, g, cat_features, neigh_features = loda_rgtan_data(
@@ -152,7 +150,6 @@ def main(args):
         hogrl_main(args)
     else:
         raise NotImplementedError("Unsupported method. ")
-
 
 if __name__ == "__main__":
     main(parse_args())
