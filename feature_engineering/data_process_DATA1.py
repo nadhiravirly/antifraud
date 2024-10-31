@@ -66,6 +66,52 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
 
+def k_neighs(
+    graph: dgl.DGLGraph,
+    center_idx: int,
+    k: int,
+    where: str,
+    choose_risk: bool = False,
+    risk_label: int = 1
+) -> torch.Tensor:
+    """Return indices of k-hop neighbors with optional risk filtering.
+
+    Args:
+        graph (dgl.DGLGraph): DGL graph dataset
+        center_idx (int): Center node index
+        k (int): K-hop neighbors
+        where (str): Direction, {"in", "out"}
+        choose_risk (bool, optional): If True, filters neighbors by risk_label. Defaults to False.
+        risk_label (int, optional): Label for risky nodes. Defaults to 1.
+
+    Returns:
+        torch.Tensor: Indices of neighbors.
+    """
+    if k == 1:
+        if where == "in":
+            neigh_idxs = graph.predecessors(center_idx)
+        elif where == "out":
+            neigh_idxs = graph.successors(center_idx)
+    elif k == 2:
+        if where == "in":
+            subg_in = dgl.khop_in_subgraph(graph, center_idx, 2, store_ids=True)[0]
+            neigh_idxs = subg_in.ndata[dgl.NID][subg_in.ndata[dgl.NID] != center_idx]
+            neigh1s = graph.predecessors(center_idx)
+            neigh_idxs = neigh_idxs[~torch.isin(neigh_idxs, neigh1s)]
+        elif where == "out":
+            subg_out = dgl.khop_out_subgraph(graph, center_idx, 2, store_ids=True)[0]
+            neigh_idxs = subg_out.ndata[dgl.NID][subg_out.ndata[dgl.NID] != center_idx]
+            neigh1s = graph.successors(center_idx)
+            neigh_idxs = neigh_idxs[~torch.isin(neigh_idxs, neigh1s)]
+
+    if choose_risk:
+        neigh_labels = graph.ndata['label'][neigh_idxs]
+        target_idxs = neigh_idxs[neigh_labels == risk_label]
+    else:
+        target_idxs = neigh_idxs
+
+    return target_idxs
+
 def count_risk_neighs(graph: dgl.DGLGraph, risk_label: int = 1) -> torch.Tensor:
     """
     Count the number of risk neighbors for each node in the graph.
