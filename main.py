@@ -134,7 +134,7 @@ def main(args):
         gtan_main(
             feat_data, g, train_idx, test_idx, labels, args, cat_features)
     elif args['method'] == 'gtan-data1':  # Tambahkan pemanggilan untuk gtan-data1
-        from methods.gtan-data1.gtan_main import gtan_main, load_gtan_data  # Import from gtan_data1
+        from methods.gtan_data1.gtan_main import gtan_main, load_gtan_data  # Import from gtan_data1
         feat_data, labels, train_idx, test_idx, g, cat_features = load_gtan_data(
             "DATA1", args['test_size'])
         gtan_main(
