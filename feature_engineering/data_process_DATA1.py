@@ -308,8 +308,8 @@ if __name__ == "__main__":
     for col in cal_list:
         le = LabelEncoder()
         data[col] = le.fit_transform(data[col].apply(str).values)
-    feat_data = data.drop("Labels", axis=1)
-    labels = data["Labels"]
+    feat_data = data.drop("is_fraud", axis=1)
+    labels = data["is_fraud"]
     g.ndata['is_fraud'] = torch.from_numpy(
         labels.to_numpy()).to(torch.long)
     g.ndata['feat'] = torch.from_numpy(
