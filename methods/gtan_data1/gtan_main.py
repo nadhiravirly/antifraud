@@ -2,6 +2,7 @@ import numpy as np
 import dgl
 import torch
 import os
+import pandas as pd
 from sklearn.metrics import average_precision_score, f1_score, roc_auc_score
 import torch.optim as optim
 from sklearn.model_selection import StratifiedKFold, train_test_split
