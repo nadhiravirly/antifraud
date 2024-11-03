@@ -9,7 +9,7 @@ import pickle
 from sklearn.model_selection import StratifiedKFold, train_test_split
 import torch.nn as nn
 from sklearn.preprocessing import LabelEncoder
-from dgl.dataloading import MultiLayerFullNeighborSampler, NodeDataLoader
+from dgl.dataloading import MultiLayerFullNeighborSampler, DataLoader
 from torch.optim.lr_scheduler import MultiStepLR
 from .gtan_model import GraphAttnModel
 from . import early_stopper, load_lpa_subtensor
@@ -33,9 +33,9 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
         trn_ind, val_ind = torch.from_numpy(np.array(train_idx)[trn_idx]).long().to(device), torch.from_numpy(np.array(train_idx)[val_idx]).long().to(device)
 
         train_sampler = MultiLayerFullNeighborSampler(args['n_layers'])
-        train_dataloader = NodeDataLoader(graph, trn_ind, train_sampler, device=device, batch_size=args['batch_size'], shuffle=True)
+        train_dataloader = DataLoader(graph, trn_ind, train_sampler, device=device, batch_size=args['batch_size'], shuffle=True)
         val_sampler = MultiLayerFullNeighborSampler(args['n_layers'])
-        val_dataloader = NodeDataLoader(graph, val_ind, val_sampler, device=device, batch_size=args['batch_size'], shuffle=False)
+        val_dataloader = DataLoader(graph, val_ind, val_sampler, device=device, batch_size=args['batch_size'], shuffle=False)
 
         model = GraphAttnModel(
             in_feats=feat_df.shape[1],
@@ -101,7 +101,7 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
 
     print("Training complete. Evaluating on test data...")
     test_sampler = MultiLayerFullNeighborSampler(args['n_layers'])
-    test_dataloader = NodeDataLoader(graph, torch.tensor(test_idx).to(device), test_sampler, device=device, batch_size=args['batch_size'])
+    test_dataloader = DataLoader(graph, torch.tensor(test_idx).to(device), test_sampler, device=device, batch_size=args['batch_size'])
 
     best_model = earlystopper.best_model.to(device)
     best_model.eval()
