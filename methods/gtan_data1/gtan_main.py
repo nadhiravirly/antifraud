@@ -2,13 +2,14 @@ import numpy as np
 import dgl
 import torch
 import os
-import pandas as pd
 from sklearn.metrics import average_precision_score, f1_score, roc_auc_score
 import torch.optim as optim
+import pandas as pd
+import pickle
 from sklearn.model_selection import StratifiedKFold, train_test_split
 import torch.nn as nn
 from sklearn.preprocessing import LabelEncoder
-from dgl.dataloading import MultiLayerFullNeighborSampler, DataLoader
+from dgl.dataloading import MultiLayerFullNeighborSampler, NodeDataLoader
 from torch.optim.lr_scheduler import MultiStepLR
 from .gtan_model import GraphAttnModel
 from . import early_stopper, load_lpa_subtensor
@@ -21,20 +22,20 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
     kfold = StratifiedKFold(n_splits=args['n_fold'], shuffle=True, random_state=args['seed'])
 
     y_target = labels.iloc[train_idx].values
-    num_feat = torch.tensor(feat_df.values, dtype=torch.float32).to(device)
-    cat_feat = {col: torch.tensor(feat_df[col].values, dtype=torch.long).to(device) for col in cat_features}
-    labels = torch.tensor(labels.values, dtype=torch.long).to(device)
-    loss_fn = nn.CrossEntropyLoss().to(device)
+    num_feat = torch.from_numpy(feat_df.values).float().to(device)
+    cat_feat = {col: torch.from_numpy(feat_df[col].values).long().to(device) for col in cat_features}
 
+    y = labels
+    labels = torch.from_numpy(y.values).long().to(device)
+    loss_fn = nn.CrossEntropyLoss().to(device)
     for fold, (trn_idx, val_idx) in enumerate(kfold.split(feat_df.iloc[train_idx], y_target)):
         print(f'Training fold {fold + 1}')
-        trn_ind = torch.tensor(np.array(train_idx)[trn_idx], dtype=torch.long).to(device)
-        val_ind = torch.tensor(np.array(train_idx)[val_idx], dtype=torch.long).to(device)
+        trn_ind, val_ind = torch.from_numpy(np.array(train_idx)[trn_idx]).long().to(device), torch.from_numpy(np.array(train_idx)[val_idx]).long().to(device)
 
         train_sampler = MultiLayerFullNeighborSampler(args['n_layers'])
-        train_dataloader = DataLoader(graph, trn_ind, train_sampler, device=device, batch_size=args['batch_size'], shuffle=True)
+        train_dataloader = NodeDataLoader(graph, trn_ind, train_sampler, device=device, batch_size=args['batch_size'], shuffle=True)
         val_sampler = MultiLayerFullNeighborSampler(args['n_layers'])
-        val_dataloader = DataLoader(graph, val_ind, val_sampler, device=device, batch_size=args['batch_size'], shuffle=False)
+        val_dataloader = NodeDataLoader(graph, val_ind, val_sampler, device=device, batch_size=args['batch_size'], shuffle=False)
 
         model = GraphAttnModel(
             in_feats=feat_df.shape[1],
@@ -98,10 +99,9 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
                 print("Early Stopping!")
                 break
 
-    # Evaluation on test data
     print("Training complete. Evaluating on test data...")
     test_sampler = MultiLayerFullNeighborSampler(args['n_layers'])
-    test_dataloader = DataLoader(graph, torch.tensor(test_idx).to(device), test_sampler, device=device, batch_size=args['batch_size'])
+    test_dataloader = NodeDataLoader(graph, torch.tensor(test_idx).to(device), test_sampler, device=device, batch_size=args['batch_size'])
 
     best_model = earlystopper.best_model.to(device)
     best_model.eval()
@@ -117,14 +117,14 @@ def gtan_main(feat_df, graph, train_idx, test_idx, labels, args, cat_features):
     # ...
 
 def load_gtan_data(dataset: str, test_size: float):
-    prefix = "data/"
+    prefix = os.path.join(os.path.dirname(__file__), "..", "..", "data/")
     if dataset == "DATA1":
         cat_features = ["cc_num", "merchant", "category", "city"]
+
         df = pd.read_csv(prefix + "DATA1_full.csv")
         df = df.loc[:, ~df.columns.str.contains('Unnamed')]
         data = df[df["is_fraud"] <= 2].reset_index(drop=True)
 
-        # Build graph structure
         alls, allt = [], []
         for column in ["cc_num", "merchant", "category", "city"]:
             src, tgt = [], []
