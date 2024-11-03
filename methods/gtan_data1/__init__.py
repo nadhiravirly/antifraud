@@ -1,9 +1,6 @@
 from .gtan_model import GraphAttnModel
 from .gtan_lpa import load_lpa_subtensor
-from .gtan_main import gtan_main, load_gtan_data  # Pastikan gtan_main dan load_gtan_data tersedia
 import copy
-
-__all__ = ['GraphAttnModel', 'load_lpa_subtensor', 'gtan_main', 'load_gtan_data', 'early_stopper']
 
 class early_stopper(object):
     def __init__(self, patience=7, verbose=False, delta=0):
@@ -37,7 +34,7 @@ class early_stopper(object):
         elif value < self.best_value + self.delta:
             self.count += 1
             if self.verbose:
-                print(f'EarlyStoper count: {self.count:02d}')
+                print('EarlyStopper count: {:02d}'.format(self.count))
             if self.count >= self.patience:
                 self.is_earlystop = True
         else:
@@ -45,3 +42,6 @@ class early_stopper(object):
             self.best_cv = cv
             self.best_model = copy.deepcopy(model).to('cpu')
             self.count = 0
+
+# Tambahkan __all__ untuk ekspor eksplisit
+__all__ = ['GraphAttnModel', 'load_lpa_subtensor', 'early_stopper']
