@@ -287,7 +287,7 @@ if __name__ == "__main__":
     out = []
     alls = []
     allt = []
-    pair = ["cc_numn", "merchant", "city", "category"]
+    pair = ["cc_num", "merchant", "city", "category"]
     for column in pair:
         src, tgt = [], []
         edge_per_trans = 3
@@ -304,7 +304,7 @@ if __name__ == "__main__":
     alls = np.array(alls)
     allt = np.array(allt)
     g = dgl.graph((alls, allt))
-    cal_list = ["cc_numn", "merchant", "city", "category"]
+    cal_list = ["cc_num", "merchant", "city", "category"]
     for col in cal_list:
         le = LabelEncoder()
         data[col] = le.fit_transform(data[col].apply(str).values)
