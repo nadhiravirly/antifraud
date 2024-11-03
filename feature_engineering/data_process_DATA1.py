@@ -135,7 +135,7 @@ def k_neighs(
             neigh1s = graph.successors(center_idx)
             neigh_idxs = neigh_idxs[~torch.isin(neigh_idxs, neigh1s)]
 
-    neigh_labels = graph.ndata['label'][neigh_idxs]
+    neigh_labels = graph.ndata['is_fraud'][neigh_idxs]
     if choose_risk:
         merchant_idxs = neigh_idxs[neigh_labels == risk_label]
     else:
@@ -152,7 +152,7 @@ def count_risk_neighs(
     ret = []
     for center_idx in graph.nodes():
         neigh_idxs = graph.successors(center_idx)
-        neigh_labels = graph.ndata['label'][neigh_idxs]
+        neigh_labels = graph.ndata['is_fraud'][neigh_idxs]
         risk_neigh_num = (neigh_labels == risk_label).sum()
         ret.append(risk_neigh_num)
 
@@ -310,7 +310,7 @@ if __name__ == "__main__":
         data[col] = le.fit_transform(data[col].apply(str).values)
     feat_data = data.drop("Labels", axis=1)
     labels = data["Labels"]
-    g.ndata['label'] = torch.from_numpy(
+    g.ndata['is_fraud'] = torch.from_numpy(
         labels.to_numpy()).to(torch.long)
     g.ndata['feat'] = torch.from_numpy(
         feat_data.to_numpy()).to(torch.float32)
